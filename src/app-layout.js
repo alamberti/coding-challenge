@@ -2,10 +2,12 @@ import React, { Component, Fragment } from 'react';
 import classnames from 'classnames';
 import './app-layout.css';
 import { getPatients, paginatePatients } from './api-utils/patient-api';
+import { getConditions } from './api-utils/conditions-api';
 import { InputCombo, Table } from './components';
 
 class AppLayout extends Component {
     state = {
+        hasError: false,
         isLoading: false,
         patients: [],
         pagination: {
@@ -14,10 +16,12 @@ class AppLayout extends Component {
         },
         searchBy: 'name',
         searchTerm: '',
+        selectedPatientConditions: [],
     };
 
     updatePatientData = ({ patients, next, previous }) => {
         this.setState({
+            hasError: false,
             isLoading: false,
             patients,
             pagination: {
@@ -27,9 +31,17 @@ class AppLayout extends Component {
         });
     };
 
+    updateConditionData = ({ conditions }) => {
+        this.setState({
+            isLoading: false,
+            selectedPatientConditions: conditions,
+        });
+    }
+
     handleRadioChanged = e => {
         this.setState({
             searchBy: e.target.value,
+            searchTerm: '',
         });
     };
 
@@ -43,7 +55,27 @@ class AppLayout extends Component {
         const { searchBy, searchTerm } = this.state;
 
         getPatients(searchBy, searchTerm)
-            .then(this.updatePatientData);
+            .then(this.updatePatientData)
+            .catch(error => {
+                this.setState({
+                    hasError: true,
+                    isLoading: false,
+                });
+            });
+        this.setState({
+            isLoading: true,
+        });
+    };
+
+    handlePatientSelect = patient => {
+        getConditions('patient', patient.id)
+            .then(this.updateConditionData)
+            .catch(error => {
+                this.setState({
+                    hasError: true,
+                    isLoading: false,
+                });
+            });
         this.setState({
             isLoading: true,
         });
@@ -52,10 +84,22 @@ class AppLayout extends Component {
     handlePagination(direction) {
         if (direction > 0) {
             paginatePatients(this.state.pagination.next)
-                .then(this.updatePatientData);
+                .then(this.updatePatientData)
+                .catch(error => {
+                    this.setState({
+                        hasError: true,
+                        isLoading: false,
+                    });
+                });
         } else if (direction < 0) {
             paginatePatients(this.state.pagination.previous)
-                .then(this.updatePatientData);
+                .then(this.updatePatientData)
+                .catch(error => {
+                    this.setState({
+                        hasError: true,
+                        isLoading: false,
+                    });
+                });
         }
         this.setState({
             isLoading: true,
@@ -74,13 +118,28 @@ class AppLayout extends Component {
         ];
     }
 
+    getConditionDataColumns() {
+        return [
+            {
+                label: 'Name',
+                renderVal: condition => {
+                    const name = condition.code.text;
+                    return <a target='_blank' href={`https://www.ncbi.nlm.nih.gov/pubmed/?term=${name}`}>{name}</a>;
+                },
+            },
+            { label: 'Initial Date Recorded', renderVal: condition => condition.dateRecorded },
+        ];
+    }
+
     render() {
         const {
+            hasError,
             isLoading,
             searchTerm,
             patients,
             pagination,
-            searchBy
+            searchBy,
+            selectedPatientConditions,
         } = this.state;
 
         const appLayoutClasses = classnames('app-layout', {
@@ -125,35 +184,55 @@ class AppLayout extends Component {
                     </div>
                 </header>
 
-                <Table
-                    columns={this.getPatientDataColumns()}
-                    data={patients}
-                    renderFooter={() =>
+                <section className='app-layout__content'>
+                    {hasError &&
                         <Fragment>
-                            {pagination.previous &&
-                                <button
-                                    className='paginate-previous'
-                                    type='button'
-                                    onClick={this.handlePagination.bind(this, -1)}
-                                    disabled={isLoading}
-                                >
-                                    Previous
-                                </button>
-                            }
-
-                            {pagination.next &&
-                                <button
-                                    className='paginate-next'
-                                    type='button'
-                                    onClick={this.handlePagination.bind(this, 1)}
-                                    disabled={isLoading}
-                                >
-                                    Next
-                                </button>
-                            }
+                            <h2>The application has encountered an error</h2>
+                            <p>Make sure your search term is for the correct query parameter.</p>
                         </Fragment>
                     }
-                />
+                    <Table
+                        id='patients-table'
+                        className='app-layout__patients-list'
+                        columns={this.getPatientDataColumns()}
+                        data={patients}
+                        rowHandler={this.handlePatientSelect}
+                        renderFooter={() =>
+                            <Fragment>
+                                {pagination.previous &&
+                                    <button
+                                        className='paginate-previous'
+                                        type='button'
+                                        onClick={this.handlePagination.bind(this, -1)}
+                                        disabled={isLoading}
+                                    >
+                                        Previous
+                                    </button>
+                                }
+
+                                {pagination.next &&
+                                    <button
+                                        className='paginate-next'
+                                        type='button'
+                                        onClick={this.handlePagination.bind(this, 1)}
+                                        disabled={isLoading}
+                                    >
+                                        Next
+                                    </button>
+                                }
+                            </Fragment>
+                        }
+                    />
+
+                    {!!selectedPatientConditions.length &&
+                        <Table
+                            id='patient-conditions-table'
+                            className='app-layout__conditions-list'
+                            columns={this.getConditionDataColumns()}
+                            data={selectedPatientConditions}
+                        />
+                    }
+                </section>
             </main>
         );
     }

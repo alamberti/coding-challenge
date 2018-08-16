@@ -1,3 +1,12 @@
 .table__wrapper {
     border: 1px solid red;
 }
+.table {
+    background-color: #eeeeeb;
+}
+.table__row:nth-child(even) {
+    background-color: #cecec8
+}
+.table__row:hover {
+    background-color: #9ffafaa8
+}

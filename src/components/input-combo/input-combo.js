@@ -29,7 +29,7 @@ const InputCombo = ({
         />
         <button
             className='input-combo__button'
-            disabled={disabled}
+            disabled={disabled || !inputValue}
             type='button'
             onClick={buttonHandler}
         >

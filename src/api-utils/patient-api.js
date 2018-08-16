@@ -41,7 +41,7 @@ export function paginatePatients(link) {
 function parsePatientBundle({ entry, link }) {
     const next = link.find(l => l.relation === 'next');
     const previous = link.find(l => l.relation === 'previous');
-    const patients = entry.map(({ resource }) => resource);
+    const patients = entry && entry.map(({ resource }) => resource);
 
     return {
         patients,

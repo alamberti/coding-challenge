@@ -16,8 +16,8 @@ const Table = ({
         <table className='table'>
             <thead>
                 <tr className='table__header'>
-                    {columns.map(({ label }) => (
-                        <th className='table__column-head' key={label}>{label}</th>
+                    {columns.map(({ label }, i) => (
+                        <th className='table__column-head' data-col={i} key={label}>{label}</th>
                     ))}
                 </tr>
             </thead>
@@ -29,16 +29,18 @@ const Table = ({
                         onClick={handleRowClick.bind(null, rowHandler, datum)}
                     >
                         {columns.map(({ renderVal }, i) => (
-                            <td className='table__cell' key={i}>{renderVal(datum)}</td>
+                            <td className='table__cell' data-col={i} key={i}>{renderVal(datum)}</td>
                         ))}
                     </tr>
                 )}
             </tbody>
         </table>
     }
-    <footer>
-        {renderFooter && renderFooter()}
-    </footer>
+    {renderFooter &&
+        <footer className='table__footer'>
+            {renderFooter()}
+        </footer>
+    }
     </div>
 );
 

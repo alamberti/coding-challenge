@@ -46,3 +46,13 @@ table {
 	border-collapse: collapse;
 	border-spacing: 0;
 }
+
+button:disabled {
+	cursor: not-allowed;
+}
+button:enabled {
+	cursor: pointer;
+}
+input[type="radio"] {
+	margin-top: 1px;
+}

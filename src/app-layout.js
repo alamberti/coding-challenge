@@ -121,7 +121,7 @@ class AppLayout extends Component {
     getConditionDataColumns() {
         return [
             {
-                label: 'Name',
+                label: 'Condition Name',
                 renderVal: condition => {
                     const name = condition.code.text;
                     return <a target='_blank' href={`https://www.ncbi.nlm.nih.gov/pubmed/?term=${name}`}>{name}</a>;
@@ -149,8 +149,9 @@ class AppLayout extends Component {
         return (
             <main className={appLayoutClasses}>
                 <header className='app-layout__header'>
-                    <h1>Look up a patient</h1>
+                    <h1>Search for patients</h1>
                     <div className='app-layout__search-form'>
+                        <span className='search-by__label'>Search by:</span>
                         <input
                             type='radio'
                             id='searchByName'
@@ -184,55 +185,60 @@ class AppLayout extends Component {
                     </div>
                 </header>
 
-                <section className='app-layout__content'>
-                    {hasError &&
-                        <Fragment>
-                            <h2>The application has encountered an error</h2>
-                            <p>Make sure your search term is for the correct query parameter.</p>
-                        </Fragment>
-                    }
-                    <Table
-                        id='patients-table'
-                        className='app-layout__patients-list'
-                        columns={this.getPatientDataColumns()}
-                        data={patients}
-                        rowHandler={this.handlePatientSelect}
-                        renderFooter={() =>
-                            <Fragment>
-                                {pagination.previous &&
-                                    <button
-                                        className='paginate-previous'
-                                        type='button'
-                                        onClick={this.handlePagination.bind(this, -1)}
-                                        disabled={isLoading}
-                                    >
-                                        Previous
-                                    </button>
-                                }
+                {hasError &&
+                    <Fragment>
+                        <h2>The application has encountered an error</h2>
+                        <p>Make sure your search term is for the correct query parameter.</p>
+                    </Fragment>
+                }
 
-                                {pagination.next &&
-                                    <button
-                                        className='paginate-next'
-                                        type='button'
-                                        onClick={this.handlePagination.bind(this, 1)}
-                                        disabled={isLoading}
-                                    >
-                                        Next
-                                    </button>
-                                }
-                            </Fragment>
-                        }
-                    />
-
-                    {!!selectedPatientConditions.length &&
+                {!!patients && !!patients.length && !hasError &&
+                    <section className='app-layout__content'>
                         <Table
-                            id='patient-conditions-table'
-                            className='app-layout__conditions-list'
-                            columns={this.getConditionDataColumns()}
-                            data={selectedPatientConditions}
+                            id='patients-table'
+                            className='app-layout__patients-list'
+                            columns={this.getPatientDataColumns()}
+                            data={patients}
+                            rowHandler={this.handlePatientSelect}
+                            renderFooter={() =>
+                                <Fragment>
+                                    {(pagination.previous || pagination.next) &&
+                                        <button
+                                            className='paginate-previous'
+                                            type='button'
+                                            onClick={this.handlePagination.bind(this, -1)}
+                                            disabled={isLoading || !pagination.previous}
+                                        >
+                                            Previous
+                                        </button>
+                                    }
+
+                                    {(pagination.previous || pagination.next) &&
+                                        <button
+                                            className='paginate-next'
+                                            type='button'
+                                            onClick={this.handlePagination.bind(this, 1)}
+                                            disabled={isLoading || !pagination.next}
+                                        >
+                                            Next
+                                        </button>
+                                    }
+                                </Fragment>
+                            }
                         />
-                    }
-                </section>
+
+                        {!!selectedPatientConditions && !!selectedPatientConditions.length &&
+                            <Table
+                                id='patient-conditions-table'
+                                className='app-layout__conditions-list'
+                                columns={this.getConditionDataColumns()}
+                                data={selectedPatientConditions}
+                            />
+                        }
+                    </section>
+                }
+                {isLoading && <div className='overlay'></div>}
+                {isLoading && <div className='loader'>Loading...</div>}
             </main>
         );
     }

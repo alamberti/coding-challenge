@@ -1,28 +1,51 @@
-import React, { Component } from 'react';
+import React, { Component, Fragment } from 'react';
+import classnames from 'classnames';
 import './app-layout.css';
-import { getPatientsByName, paginatePatients } from './api-utils/patient-api';
+import { getPatients, paginatePatients } from './api-utils/patient-api';
+import { InputCombo, Table } from './components';
 
 class AppLayout extends Component {
     state = {
+        isLoading: false,
         patients: [],
         pagination: {
             next: null,
             previous: null,
         },
+        searchBy: 'name',
+        searchTerm: '',
     };
-
-    componentDidMount() {
-        getPatientsByName('john')
-            .then(this.updatePatientData);
-    }
 
     updatePatientData = ({ patients, next, previous }) => {
         this.setState({
+            isLoading: false,
             patients,
             pagination: {
                 next,
                 previous,
             },
+        });
+    };
+
+    handleRadioChanged = e => {
+        this.setState({
+            searchBy: e.target.value,
+        });
+    };
+
+    handleSearchTermInputChange = e => {
+        this.setState({
+            searchTerm: e.target.value,
+        });
+    };
+
+    handlePatientSearch = e => {
+        const { searchBy, searchTerm } = this.state;
+
+        getPatients(searchBy, searchTerm)
+            .then(this.updatePatientData);
+        this.setState({
+            isLoading: true,
         });
     };
 
@@ -34,36 +57,104 @@ class AppLayout extends Component {
             paginatePatients(this.state.pagination.previous)
                 .then(this.updatePatientData);
         }
+        this.setState({
+            isLoading: true,
+        });
+    }
+
+    getPatientDataColumns() {
+        return [
+            { label: 'ID', renderVal: patient => patient.id },
+            {
+                label: 'Name',
+                renderVal: patient => patient.name.find(name => name.use === 'official').text,
+            },
+            { label: 'Gender', renderVal: patient => patient.gender },
+            { label: 'DOB', renderVal: patient => patient.birthDate },
+        ];
     }
 
     render() {
-        const { patients, pagination } = this.state;
+        const {
+            isLoading,
+            searchTerm,
+            patients,
+            pagination,
+            searchBy
+        } = this.state;
+
+        const appLayoutClasses = classnames('app-layout', {
+            'app-layout--loading': isLoading,
+        });
 
         return (
-            <div className="app-layout">
-                <ul className="app-layout-intro">
-                    {patients.length ?
-                        patients.map(({ id, name }) => {
-                            return (
-                                <li key={id} className='patient'>
-                                    ID: {id}, Name: {name.find(n => n.use === 'official').text}
-                                </li>
-                            )
-                        }): <li className='no-data'>No data available</li>
-                    }
-                </ul>
+            <main className={appLayoutClasses}>
+                <header className='app-layout__header'>
+                    <h1>Look up a patient</h1>
+                    <div className='app-layout__search-form'>
+                        <input
+                            type='radio'
+                            id='searchByName'
+                            name='searchBy'
+                            value='name'
+                            checked={searchBy === 'name'}
+                            onChange={this.handleRadioChanged}
+                        />
+                        <label htmlFor='searchByName'>Name</label>
 
-                {pagination.previous &&
-                    <button className='paginate-previous' type='button' onClick={this.handlePagination.bind(this, -1)}>
-                        Previous
-                    </button>
-                }
-                {pagination.next &&
-                    <button className='paginate-next' type='button' onClick={this.handlePagination.bind(this, 1)}>
-                        Next
-                    </button>
-                }
-            </div>
+                        <input
+                            type='radio'
+                            id='searchById'
+                            name='searchBy'
+                            value='_id'
+                            checked={searchBy === '_id'}
+                            onChange={this.handleRadioChanged}
+                        />
+                        <label htmlFor='searchById'>ID</label>
+
+                        <InputCombo
+                            buttonHandler={this.handlePatientSearch}
+                            buttonLabel='Search'
+                            className='patient-search'
+                            disabled={isLoading}
+                            id='patient-search-form'
+                            inputHandler={this.handleSearchTermInputChange}
+                            inputValue={searchTerm}
+                            label='Patient search term:'
+                        />
+                    </div>
+                </header>
+
+                <Table
+                    columns={this.getPatientDataColumns()}
+                    data={patients}
+                    renderFooter={() =>
+                        <Fragment>
+                            {pagination.previous &&
+                                <button
+                                    className='paginate-previous'
+                                    type='button'
+                                    onClick={this.handlePagination.bind(this, -1)}
+                                    disabled={isLoading}
+                                >
+                                    Previous
+                                </button>
+                            }
+
+                            {pagination.next &&
+                                <button
+                                    className='paginate-next'
+                                    type='button'
+                                    onClick={this.handlePagination.bind(this, 1)}
+                                    disabled={isLoading}
+                                >
+                                    Next
+                                </button>
+                            }
+                        </Fragment>
+                    }
+                />
+            </main>
         );
     }
 }

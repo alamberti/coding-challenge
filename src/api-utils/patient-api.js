@@ -4,12 +4,12 @@ import { get } from '../utils/fetch-util';
  * @param {string} name - target of patient search
  * @returns {Promise} - contains parsed patient data
  */
-export function getPatientsByName(name) {
+export function getPatients(queryParam, queryValue) {
     return get({
         url: 'https://fhir-open.sandboxcerner.com/dstu2/0b8a0111-e8e6-4c26-a91c-5069cbc6b1ca',
         resource: 'Patient',
         query: {
-            name,
+            [queryParam]: queryValue,
         },
     }).then(parsePatientBundle);
 }
